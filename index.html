@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#ffffff">
+<meta name="robots" content="noindex">
+<title>Rat Park Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* 白基調・オレンジ（Claude Code）アクセントの単一ライトテーマ。画面は「フォルダ選択」と「エディタ」の2枚を切り替える。 */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #faf9f7;
+  --surface-2: #f3f1ed;
+  --line: #e8e5df;
+  --text: #1f1e1c;
+  --muted: #6e6a64;
+  --accent: #d97757;
+  --accent-strong: #c15f3c;
+  --accent-soft: #fbeee8;
+  --accent-ink: #a94f30;
+  --danger: #b4372c;
+  --danger-soft: #fbe6e3;
+  --ok: #2f7a4f;
+  --ok-soft: #e7f3ec;
+  --warn-soft: #fff4d6;
+  --warn-ink: #7a5a00;
+  --scrim: rgba(31,30,28,.38);
+  --toast: #2a2825;
+  --on-accent: #ffffff;
+  --radius: 14px;
+  --gothic: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mincho: "BIZ UDPMincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --editor-font: var(--gothic);
+  --editor-size: 17px;
+  --editor-lh: 1.9;
+  --vvh: 100%;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { height: 100%; background: var(--bg); color: var(--text); }
+body { font-family: var(--gothic); font-size: 15px; line-height: 1.6; overscroll-behavior: none; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input, select, textarea { font: inherit; color: inherit; }
+svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.screen { position: fixed; left: 0; right: 0; top: 0; height: var(--vvh); display: flex; flex-direction: column; background: var(--bg); }
+.topbar { display: flex; align-items: center; gap: 8px; padding: calc(10px + var(--safe-t)) 12px 10px; border-bottom: 1px solid var(--line); background: var(--bg); min-height: 56px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.icon-btn:active { background: var(--surface-2); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.brand-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: var(--on-accent); }
+.brand-mark svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.spacer { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+
+/* フォルダ選択 */
+.browse-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px calc(24px + var(--safe-b)); }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.search { position: relative; display: block; }
+.search input { width: 100%; height: 46px; border: 1px solid var(--line); border-radius: 12px; padding: 0 14px 0 42px; background: var(--surface); outline: none; font-size: 16px; }
+.search input:focus { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search svg { position: absolute; left: 13px; top: 13px; color: var(--muted); }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 13px; color: var(--muted); }
+.crumbs button { padding: 4px 6px; border-radius: 6px; color: var(--accent-ink); }
+.crumbs button:last-child { color: var(--text); font-weight: 700; }
+.section-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .08em; margin: 8px 4px 0; }
+.list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--bg); }
+.row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; min-height: 58px; text-align: left; width: 100%; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row:active { background: var(--surface); }
+.row .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--surface-2); color: var(--muted); }
+.row .ico.doc { background: var(--accent-soft); color: var(--accent-ink); }
+.row .txt { flex: 1; min-width: 0; }
+.row .name { font-size: 15.5px; line-height: 1.45; word-break: break-all; }
+.row .sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .chev { color: var(--muted); width: 18px; height: 18px; }
+.open-pill { font-size: 12.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 5px 12px; flex: none; }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0 4px; }
+.notice { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.notice h3 { margin: 0; font-size: 16px; }
+.notice p { margin: 0; color: var(--muted); font-size: 14px; }
+.notice.warn { background: var(--accent-soft); border-color: var(--accent-soft); }
+.skeleton { height: 58px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, var(--surface) 0, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* エディタ */
+.ed-title { flex: 1; min-width: 0; }
+.ed-title .t1 { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-title .t2 { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { font-size: 11.5px; padding: 4px 9px; border-radius: 999px; white-space: nowrap; flex: none; background: var(--surface-2); color: var(--muted); }
+.status.dirty { background: var(--accent-soft); color: var(--accent-ink); }
+.status.saving { background: var(--warn-soft); color: var(--warn-ink); }
+.status.saved { background: var(--ok-soft); color: var(--ok); }
+.status.error { background: var(--danger-soft); color: var(--danger); }
+.tabs { display: flex; gap: 4px; padding: 6px 12px 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; align-items: flex-end; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 9px 14px 10px; font-size: 14px; color: var(--muted); white-space: nowrap; border-bottom: 2.5px solid transparent; margin-bottom: -1px; }
+.tab.active { color: var(--text); font-weight: 700; border-bottom-color: var(--accent); }
+.tab .mod { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-left: 6px; vertical-align: 2px; }
+.tab-tools { margin-left: auto; align-self: center; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; }
+.seg button { padding: 4px 10px; font-size: 12.5px; border-radius: 8px; color: var(--muted); }
+.seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.ed-main { flex: 1; min-height: 0; display: flex; }
+#editor { flex: 1; width: 100%; height: 100%; resize: none; border: 0; outline: none; background: var(--bg); color: var(--text);
+  font-family: var(--editor-font); font-size: var(--editor-size); line-height: var(--editor-lh);
+  padding: 18px max(18px, calc((100% - 40em) / 2)) 40vh; letter-spacing: .02em; caret-color: var(--accent); }
+#editor::selection { background: #f6d5c7; }
+.preview { flex: 1; overflow-y: auto; padding: 18px max(18px, calc((100% - 40em) / 2)) 30vh; font-family: var(--editor-font); font-size: var(--editor-size); line-height: var(--editor-lh); letter-spacing: .02em; }
+.pv-block { margin: 0 0 1.1em; }
+.pv-name { font-family: var(--gothic); font-size: .74em; font-weight: 700; color: var(--accent-ink); letter-spacing: .04em; }
+.pv-line { white-space: pre-wrap; word-break: break-word; }
+.pv-mark { font-family: var(--gothic); font-size: .72em; font-weight: 700; display: inline-block; padding: 2px 10px; border-radius: 6px; background: var(--surface-2); color: var(--muted); margin: .6em 0 .5em; }
+.pv-choice { color: var(--accent-ink); font-weight: 700; }
+.dock { border-top: 1px solid var(--line); background: var(--bg); padding-bottom: var(--safe-b); }
+.quick { display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px; scrollbar-width: none; }
+.quick::-webkit-scrollbar { display: none; }
+.q { flex: none; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
+.q:active { background: var(--accent-soft); border-color: var(--accent); }
+.q.name { color: var(--accent-ink); border-color: #f0d3c6; background: #fff8f5; font-weight: 700; }
+.q.sym { min-width: 40px; font-family: var(--mincho); }
+.q.icon { width: 40px; padding: 0; display: grid; place-items: center; }
+.qsep { flex: none; width: 1px; background: var(--line); margin: 6px 2px; }
+.actions { display: flex; align-items: center; gap: 8px; padding: 6px 10px 10px; }
+.count { font-size: 12px; color: var(--muted); line-height: 1.25; min-width: 0; flex: 1; }
+.count b { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
+.btn { height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+.btn svg.i { width: 18px; height: 18px; stroke-width: 2; }
+.btn-outline { border: 1.5px solid var(--accent); color: var(--accent-ink); background: var(--bg); }
+.btn-outline:active { background: var(--accent-soft); }
+.btn-primary { background: var(--accent-strong); color: var(--on-accent); }
+.btn-primary:active { background: var(--accent-ink); }
+.btn-ghost { background: var(--surface-2); color: var(--text); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+body.kb .actions .count { display: none; }
+body.kb .actions .btn { height: 38px; font-size: 14px; padding: 0 12px; }
+body.kb .actions { padding-top: 2px; padding-bottom: 6px; }
+
+/* シート・トースト */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; display: flex; align-items: flex-end; justify-content: center; animation: fade .15s ease; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(24px); opacity: 0; } }
+.sheet { width: 100%; max-width: 560px; background: var(--bg); border-radius: 20px 20px 0 0; padding: 8px 20px calc(20px + var(--safe-b)); max-height: 88%; overflow-y: auto; animation: up .18s ease; }
+.sheet .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 4px auto 14px; }
+.sheet h2 { font-size: 18px; margin: 0 0 6px; text-wrap: balance; }
+.sheet p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+.sheet .btns { display: flex; gap: 10px; margin-top: 16px; }
+.sheet .btns.col { flex-direction: column; }
+.sheet .btns .btn { flex: 1; }
+@media (min-width: 640px) { .scrim { align-items: center; } .sheet { border-radius: 20px; } }
+@media (prefers-reduced-motion: reduce) { .scrim, .sheet, .toast, .skeleton { animation: none; } }
+.dlg-ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); margin: 4px 0 12px; }
+.dlg-ico svg.i { width: 26px; height: 26px; }
+.dlg-ico.ok { background: var(--ok-soft); color: var(--ok); }
+.dlg-ico.bad { background: var(--danger-soft); color: var(--danger); }
+.flow { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 13px; flex-wrap: wrap; }
+.flow code { font-family: var(--mono); font-size: 12px; background: var(--bg); border: 1px solid var(--line); padding: 3px 7px; border-radius: 6px; word-break: break-all; }
+.flow .arrow { color: var(--accent); font-weight: 700; }
+.mono-box { font-family: var(--mono); font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; max-height: 30vh; overflow: auto; }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.field .lbl { font-size: 15px; min-width: 0; }
+.field .lbl small { display: block; color: var(--muted); font-size: 12px; }
+.field select, .field input[type=text] { height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 10px; font-size: 15px; }
+.field input[type=text] { width: 46%; min-width: 0; }
+.text-in { width: 100%; height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 16px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stepper button { width: 40px; height: 36px; font-size: 18px; background: var(--surface); }
+.stepper span { min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; }
+.toast { position: fixed; left: 50%; top: calc(66px + var(--safe-t)); transform: translateX(-50%); z-index: 60; background: var(--toast); color: var(--on-accent); padding: 10px 16px; border-radius: 12px; font-size: 13.5px; box-shadow: 0 6px 24px rgba(0,0,0,.18); max-width: calc(100% - 32px); animation: up .18s ease; }
+.toast.err { background: var(--danger); }
+.spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+a { color: var(--accent-ink); }
+.steps { margin: 0; padding-left: 1.3em; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.steps code, .notice code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+.tok-form { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.tok-lbl { font-size: 13px; font-weight: 700; }
+.tok-err { margin: 0; color: var(--danger); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8M7 21v-7h10v7"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 7.2v9.6M6 7.5c0 3 3 4.5 9.8 4.5"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17H2.5z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></symbol>
+</svg>
+
+<!-- フォルダ選択 -->
+<section id="browse" class="screen">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"><svg class="i"><use href="#i-pen"/></svg></span>Rat Park Editor</div>
+    <span class="spacer"></span>
+    <span class="chip" id="branchChip" title="執筆用ブランチ"><span class="dot"></span><span id="branchName">writing</span></span>
+    <button class="icon-btn" id="browseSettings" aria-label="設定"><svg class="i"><use href="#i-gear"/></svg></button>
+  </header>
+  <div class="browse-body">
+    <div class="wrap">
+      <div id="connectBox" hidden></div>
+      <div id="browseMain">
+        <label class="search"><svg class="i"><use href="#i-search"/></svg>
+          <input id="search" type="search" placeholder="このフォルダ内を絞り込み（例：ベンチ、12）" autocomplete="off" enterkeyhint="search">
+        </label>
+        <div id="recentWrap" hidden>
+          <div class="section-label">最近開いたシナリオ</div>
+          <div class="list" id="recent" style="margin-top:8px"></div>
+        </div>
+        <div class="section-label">シナリオフォルダ</div>
+        <nav class="crumbs" id="crumbs" style="margin-top:6px"></nav>
+        <div class="list" id="dirList" style="margin-top:6px"></div>
+        <p class="hint" style="margin-top:10px">フォルダを選ぶと中の script.md / plot.md を開いて編集できます。保存先は GitHub の執筆用ブランチです。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- エディタ -->
+<section id="edit" class="screen" hidden>
+  <header class="topbar">
+    <button class="icon-btn" id="backBtn" aria-label="フォルダ選択へ戻る"><svg class="i"><use href="#i-back"/></svg></button>
+    <div class="ed-title"><div class="t1" id="edTitle"></div><div class="t2" id="edPath"></div></div>
+    <span class="status" id="status">—</span>
+    <button class="icon-btn" id="editSettings" aria-label="設定"><svg class="i"><use href="#i-gear"/></svg></button>
+  </header>
+  <div class="tabs" id="tabs">
+    <div class="tab-tools">
+      <div class="seg" aria-label="表示モード"><button id="modeWrite" class="on">書く</button><button id="modeRead">読む</button></div>
+    </div>
+  </div>
+  <div class="ed-main">
+    <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="本文"></textarea>
+    <div id="preview" class="preview" hidden></div>
+  </div>
+  <div class="dock">
+    <div class="quick" id="quick"></div>
+    <div class="actions">
+      <div class="count"><b id="chars">0</b> 字<br><span id="autoInfo">自動保存 オフ</span></div>
+      <button class="btn btn-outline" id="commitBtn"><svg class="i"><use href="#i-save"/></svg>一時保存</button>
+      <button class="btn btn-primary" id="mergeBtn"><svg class="i"><use href="#i-merge"/></svg>最終保存</button>
+    </div>
+  </div>
+</section>
+
+<div id="layer"></div>
+
+<script>
+"use strict";
+/* ============================== 基本 ============================== */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const icon = (id) => `<svg class="i"><use href="#${id}"/></svg>`;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("rpe:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("rpe:" + k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem("rpe:" + k); } catch {} },
+};
+const countChars = (t) => { let n = 0; for (const ch of t) if (!/\s/.test(ch)) n++; return n; };
+const fmtTime = (d) => d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const ROOT = "scenario";
+const EDITABLE = /\.(md|txt)$/;
+
+/* ============================== 設定 ============================== */
+const settings = Object.assign({
+  owner: "", repo: "", branch: "writing", base: "main",
+  autoMin: 5, font: "gothic", size: 17, lh: 1.9,
+}, store.get("settings", {}));
+function applySettings() {
+  const r = document.documentElement.style;
+  r.setProperty("--editor-font", settings.font === "mincho" ? "var(--mincho)" : "var(--gothic)");
+  r.setProperty("--editor-size", settings.size + "px");
+  r.setProperty("--editor-lh", settings.lh);
+  store.set("settings", settings);
+  $("#branchName").textContent = settings.branch;
+  $("#autoInfo").textContent = settings.autoMin ? `自動保存 ${settings.autoMin}分ごと` : "自動保存 オフ";
+  scheduleAutosave();
+}
+
+/* ============================== GitHub（REST API + トークン） ============================== */
+// トークンはこの端末のブラウザ（localStorage）にだけ保存し、api.github.com にだけ送る
+const API = "https://api.github.com";
+const urlRepo = new URLSearchParams(location.search).get("repo");
+if (urlRepo && /^[\w.-]+\/[\w.-]+$/.test(urlRepo)) {
+  [settings.owner, settings.repo] = urlRepo.split("/");
+  store.set("settings", settings);
+}
+let token = store.get("token", "");
+class GhError extends Error {
+  constructor(code, message, status) { super(message); this.code = code; this.status = status; }
+}
+const encPath = (p) => p.split("/").map(encodeURIComponent).join("/");
+const repoUrl = () => `${API}/repos/${encodeURIComponent(settings.owner)}/${encodeURIComponent(settings.repo)}`;
+async function api(method, path, body) {
+  if (!token) throw new GhError("no_token", "GitHub のトークンが設定されていません");
+  let res;
+  try {
+    res = await fetch(path.startsWith("http") ? path : repoUrl() + path, {
+      method, cache: "no-store",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    throw new GhError("network", "GitHub に接続できません。電波状況を確認してください");
+  }
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const code = res.status === 401 ? "bad_token" : res.status === 403 ? "forbidden"
+      : res.status === 404 ? "not_found" : res.status === 409 ? "conflict" : res.status === 422 ? "invalid" : "http";
+    throw new GhError(code, (data && data.message) || `GitHub エラー (${res.status})`, res.status);
+  }
+  return data;
+}
+function b64encode(text) {
+  const bytes = new TextEncoder().encode(text);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64decode(b64) {
+  const bin = atob((b64 || "").replace(/\s/g, ""));
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(u8);
+}
+async function ghListDir(path, branch = settings.branch) {
+  const d = await api("GET", `/contents/${encPath(path)}?ref=${encodeURIComponent(branch)}`);
+  if (!Array.isArray(d)) throw new GhError("invalid", "フォルダを読み込めませんでした");
+  return d.map((x) => ({ type: x.type, name: x.name, path: x.path, sha: x.sha, size: x.size }));
+}
+async function ghReadFile(path, branch = settings.branch) {
+  const d = await api("GET", `/contents/${encPath(path)}?ref=${encodeURIComponent(branch)}`);
+  let text = d.content ? b64decode(d.content) : "";
+  if (!d.content && d.size > 0) {  // 1MB を超えるファイルは blob から読む
+    const blob = await api("GET", `/git/blobs/${d.sha}`);
+    text = b64decode(blob.content);
+  }
+  return { text, sha: d.sha };
+}
+async function ghWriteFile(path, content, message, sha) {
+  const d = await api("PUT", `/contents/${encPath(path)}`, {
+    message, content: b64encode(content), branch: settings.branch, ...(sha ? { sha } : {}),
+  });
+  return d && d.content ? d.content.sha : null;
+}
+async function ghBranchExists(b) {
+  try { await api("GET", `/branches/${encodeURIComponent(b)}`); return true; }
+  catch (e) { if (e.code === "not_found") return false; throw e; }
+}
+async function ghCreateBranch(b, from) {
+  const r = await api("GET", `/git/ref/heads/${encodeURIComponent(from)}`);
+  await api("POST", `/git/refs`, { ref: "refs/heads/" + b, sha: r.object.sha });
+}
+// base に head をマージ。"merged" / "noop"（反映済み）。コンフリクトは GhError(conflict)
+async function ghMerge(base, head, message) {
+  const r = await api("POST", `/merges`, { base, head, commit_message: message });
+  return r ? "merged" : "noop";
+}
+
+function isConnError(e) { return ["no_token", "bad_token", "forbidden"].includes(e.code); }
+function connectHelp(code, detail) {
+  const box = $("#connectBox");
+  box.hidden = false;
+  $("#browseMain").hidden = true;
+  const why = {
+    bad_token: "トークンが無効か期限切れです。新しいトークンを入れ直してください。",
+    forbidden: "このトークンには必要な権限がありません。「Contents: Read and write」を付けたトークンを入れ直してください。",
+    not_found: "リポジトリが見つかりません。名前と、トークンの対象リポジトリを確認してください。",
+  }[code] || "";
+  box.innerHTML = `<div class="notice">
+    <h3>GitHub とつなぐ</h3>
+    ${why ? `<p style="color:var(--danger)">${esc(why)}</p>` : ""}
+    <p>原稿の読み書きに、あなたの GitHub のトークンを使います。トークンはこの端末のブラウザにだけ保存され、GitHub 以外には送られません。</p>
+    <ol class="steps">
+      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub のトークン作成ページ</a>を開く</li>
+      <li>Repository access で「Only select repositories」→ 原稿のリポジトリを選ぶ</li>
+      <li>Permissions の「Contents」を <b>Read and write</b> にして作成</li>
+      <li>表示された <code>github_pat_…</code> をコピーして下に貼り付ける</li>
+    </ol>
+    <form id="tokForm" class="tok-form">
+      <label class="tok-lbl" for="tokRepo">リポジトリ（owner/名前）</label>
+      <input class="text-in" id="tokRepo" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="owner/repository" value="${esc(settings.owner && settings.repo ? settings.owner + "/" + settings.repo : "")}">
+      <label class="tok-lbl" for="tokVal">トークン</label>
+      <input class="text-in" id="tokVal" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_...">
+      <button class="btn btn-primary" type="submit" id="tokBtn">${icon("i-plug")}接続する</button>
+      <p class="tok-err" id="tokErr" hidden></p>
+    </form></div>`;
+  $("#tokForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const repo = $("#tokRepo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$|\/$/g, "");
+    const t = $("#tokVal").value.trim();
+    const err = $("#tokErr");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { err.hidden = false; err.textContent = "リポジトリは owner/名前 の形で入力してください"; return; }
+    if (!t) { err.hidden = false; err.textContent = "トークンを貼り付けてください"; return; }
+    $("#tokBtn").disabled = true; err.hidden = true;
+    [settings.owner, settings.repo] = repo.split("/");
+    token = t;
+    try {
+      const info = await api("GET", "");
+      if (info.permissions && !info.permissions.push) throw new GhError("forbidden", "書き込み権限がありません");
+      if (info.default_branch && settings.base !== info.default_branch && settings.base === "main") settings.base = info.default_branch;
+      store.set("token", token); applySettings();
+      box.hidden = true; $("#browseMain").hidden = false;
+      toast("GitHub に接続しました");
+      dirCache.clear(); curDir = ROOT; boot();
+    } catch (e) {
+      token = store.get("token", "");
+      $("#tokBtn").disabled = false;
+      err.hidden = false;
+      err.textContent = e.code === "bad_token" ? "トークンが正しくありません"
+        : e.code === "not_found" ? "リポジトリが見つかりません（名前か、トークンの対象リポジトリを確認）"
+        : e.code === "forbidden" ? "このトークンでは書き込めません（Contents: Read and write が必要）"
+        : e.message;
+    }
+  });
+}
+
+/* ============================== 画面の高さ（キーボード対応） ============================== */
+function fitViewport() {
+  const vv = window.visualViewport;
+  if (vv) document.documentElement.style.setProperty("--vvh", vv.height + "px");
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", fitViewport); visualViewport.addEventListener("scroll", fitViewport); }
+window.addEventListener("resize", fitViewport);
+fitViewport();
+const coarse = window.matchMedia("(pointer: coarse)").matches;
+document.addEventListener("focusin", (e) => { if (coarse && e.target.id === "editor") document.body.classList.add("kb"); });
+document.addEventListener("focusout", (e) => { if (e.target.id === "editor") document.body.classList.remove("kb"); });
+
+/* ============================== トースト・シート ============================== */
+let toastTimer;
+function toast(msg, err = false) {
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
+  const t = document.createElement("div");
+  t.className = "toast" + (err ? " err" : "");
+  t.setAttribute("role", "status");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), err ? 6000 : 2600);
+}
+function sheet(html, { onMount, dismissable = true } = {}) {
+  return new Promise((resolve) => {
+    const scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+    const close = (v) => { scrim.remove(); resolve(v); };
+    scrim.addEventListener("click", (e) => {
+      if (e.target === scrim && dismissable) return close(null);
+      const b = e.target.closest("[data-v]");
+      if (b) close(b.dataset.v);
+    });
+    $("#layer").appendChild(scrim);
+    onMount && onMount(scrim.firstElementChild, close);
+  });
+}
+
+/* ============================== フォルダ選択 ============================== */
+let curDir = store.get("lastDir", ROOT);
+if (!curDir.startsWith(ROOT)) curDir = ROOT;
+let curEntries = [];
+const dirCache = new Map();
+
+function renderRows() {
+  const q = $("#search").value.trim().toLowerCase();
+  const words = q ? q.split(/\s+/) : [];
+  const match = (n) => words.every((w) => n.toLowerCase().includes(w));
+  const dirs = curEntries.filter((e) => e.type === "dir" && !e.name.startsWith(".") && match(e.name));
+  const files = curEntries.filter((e) => e.type === "file" && EDITABLE.test(e.name));
+  let html = dirs.map((d) => `<button class="row" data-dir="${esc(d.path)}">
+      <span class="ico">${icon("i-folder")}</span>
+      <span class="txt"><div class="name">${esc(d.name)}</div></span>
+      <svg class="i chev"><use href="#i-chev"/></svg></button>`).join("");
+  if (files.length && !q) {
+    html = `<button class="row" data-open="${esc(curDir)}">
+      <span class="ico doc">${icon("i-pen")}</span>
+      <span class="txt"><div class="name">このフォルダを開く</div><div class="sub">${files.map((f) => esc(f.name)).join(" · ")}</div></span>
+      <span class="open-pill">開く</span></button>` + html;
+  }
+  $("#dirList").innerHTML = html || `<div class="empty">${q ? "見つかりませんでした" : "フォルダがありません"}</div>`;
+}
+function renderCrumbs() {
+  const parts = curDir.split("/");
+  $("#crumbs").innerHTML = parts.map((p, i) =>
+    (i ? "<span>/</span>" : "") + `<button data-crumb="${esc(parts.slice(0, i + 1).join("/"))}">${esc(p)}</button>`).join("");
+}
+async function loadDir(path, { autoOpen = false } = {}) {
+  $("#search").value = "";
+  if (!dirCache.has(path)) $("#dirList").innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
+  let entries;
+  try {
+    entries = dirCache.get(path) || await ghListDir(path);
+    dirCache.set(path, entries);
+  } catch (e) {
+    if (isConnError(e)) return connectHelp(e.code);
+    if (e.code === "not_found") {
+      let exists = true;
+      try { exists = await ghBranchExists(settings.branch); } catch {}
+      if (!exists) return branchMissing();
+      if (path !== ROOT) return loadDir(ROOT);
+    }
+    $("#dirList").innerHTML = `<div class="empty">読み込めませんでした：${esc(e.message.slice(0, 200))}</div>`;
+    return;
+  }
+  const hasFiles = entries.some((x) => x.type === "file" && EDITABLE.test(x.name));
+  const hasDirs = entries.some((x) => x.type === "dir");
+  if (autoOpen && hasFiles && !hasDirs) return openFolder(path, entries);
+  curDir = path; curEntries = entries;
+  store.set("lastDir", curDir);
+  renderCrumbs(); renderRows();
+}
+function branchMissing() {
+  $("#dirList").innerHTML = `<div class="notice">
+    <h3>執筆用ブランチ「${esc(settings.branch)}」がまだありません</h3>
+    <p>${esc(settings.base)} ブランチから作成して、そこに一時保存していきます。</p>
+    <div><button class="btn btn-primary" id="mkBranch">ブランチを作成</button></div></div>`;
+  $("#mkBranch").onclick = async (ev) => {
+    ev.target.disabled = true;
+    try {
+      await ghCreateBranch(settings.branch, settings.base);
+      toast(`ブランチ ${settings.branch} を作成しました`);
+      dirCache.clear(); loadDir(ROOT);
+    } catch (e) {
+      if (isConnError(e)) return connectHelp(e.code);
+      ev.target.disabled = false;
+      toast("作成できませんでした：" + e.message.slice(0, 160), true);
+    }
+  };
+}
+function renderRecent() {
+  const rec = store.get("recent", []);
+  $("#recentWrap").hidden = !rec.length;
+  $("#recent").innerHTML = rec.slice(0, 5).map((p) => {
+    const parts = p.split("/");
+    return `<button class="row" data-open="${esc(p)}"><span class="ico doc">${icon("i-doc")}</span>
+      <span class="txt"><div class="name">${esc(parts.pop())}</div><div class="sub">${esc(parts.slice(1).join(" / "))}</div></span>
+      <span class="open-pill">開く</span></button>`;
+  }).join("");
+}
+$("#browse").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-crumb]");
+  if (c) return loadDir(c.dataset.crumb);
+  const o = e.target.closest("[data-open]");
+  if (o) return openFolder(o.dataset.open);
+  const d = e.target.closest("[data-dir]");
+  if (d) return loadDir(d.dataset.dir, { autoOpen: true });
+});
+$("#search").addEventListener("input", renderRows);
+
+/* ============================== エディタ状態 ============================== */
+const ed = $("#editor");
+let folder = null;
+let files = [];   // {name, path, content, saved, sha}
+let active = 0, busy = false, lastSavedAt = null, mode = "write";
+const cur = () => files[active];
+const isDirty = (f) => f && f.content !== f.saved;
+const anyDirty = () => files.some(isDirty);
+
+async function openFolder(path, entries) {
+  if (folder !== null && anyDirty() && !(await confirmLeave())) return;
+  toast("読み込み中…");
+  try {
+    entries = entries || await ghListDir(path);
+    dirCache.set(path, entries);
+    const md = entries.filter((x) => x.type === "file" && EDITABLE.test(x.name));
+    if (!md.length) return toast("このフォルダには原稿ファイルがありません", true);
+    const order = { "script.md": 0, "plot.md": 1 };
+    md.sort((a, b) => (order[a.name] ?? 9) - (order[b.name] ?? 9) || a.name.localeCompare(b.name));
+    const loaded = [];
+    for (const f of md) {
+      const r = await ghReadFile(f.path);
+      loaded.push({ name: f.name, path: f.path, content: r.text, saved: r.text, sha: r.sha || f.sha });
+    }
+    folder = path; files = loaded; active = 0; lastSavedAt = null;
+  } catch (e) {
+    if (isConnError(e)) return connectHelp(e.code);
+    return toast("開けませんでした：" + e.message.slice(0, 160), true);
+  }
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
+  const rec = store.get("recent", []).filter((p) => p !== folder);
+  rec.unshift(folder); store.set("recent", rec.slice(0, 10));
+  const parts = folder.split("/");
+  $("#edTitle").textContent = parts[parts.length - 1];
+  $("#edPath").textContent = parts.slice(1, -1).join(" / ");
+  $("#browse").hidden = true; $("#edit").hidden = false;
+  for (const f of files) {
+    const draft = store.get("draft:" + f.path);
+    if (draft && draft.content !== f.content) {
+      const v = await sheet(`
+        <div class="dlg-ico">${icon("i-clock")}</div>
+        <h2>保存していない下書きがあります</h2>
+        <p><b>${esc(f.name)}</b> に、前回保存されなかった編集内容（${esc(new Date(draft.at).toLocaleString("ja-JP"))}）がこの端末に残っています。復元しますか？</p>
+        <div class="btns"><button class="btn btn-ghost" data-v="discard">破棄</button><button class="btn btn-primary" data-v="restore">復元する</button></div>`);
+      if (v === "restore") f.content = draft.content; else if (v === "discard") store.del("draft:" + f.path);
+    }
+  }
+  renderTabs(); switchTab(0); setMode("write");
+}
+function renderTabs() {
+  const tools = $(".tab-tools");
+  $("#tabs").querySelectorAll(".tab").forEach((t) => t.remove());
+  files.forEach((f, i) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (i === active ? " active" : "");
+    b.innerHTML = esc(f.name) + (isDirty(f) ? `<span class="mod" aria-label="未保存"></span>` : "");
+    b.onclick = () => switchTab(i);
+    $("#tabs").insertBefore(b, tools);
+  });
+}
+function switchTab(i) {
+  if (files[active]) { files[active].scroll = ed.scrollTop; files[active].sel = [ed.selectionStart, ed.selectionEnd]; }
+  active = i;
+  const f = cur();
+  ed.value = f.content;
+  ed.scrollTop = f.scroll || 0;
+  if (f.sel) { try { ed.setSelectionRange(f.sel[0], f.sel[1]); } catch {} }
+  renderTabs(); renderQuick(); updateCount(); updateStatus();
+  if (mode === "read") renderPreview();
+}
+function updateCount() { $("#chars").textContent = countChars(ed.value).toLocaleString(); }
+function updateStatus(kind) {
+  const s = $("#status");
+  s.className = "status";
+  if (kind === "saving") { s.classList.add("saving"); s.textContent = "保存中…"; return; }
+  if (kind === "error") { s.classList.add("error"); s.textContent = "保存失敗"; return; }
+  if (anyDirty()) { s.classList.add("dirty"); s.textContent = "未保存"; }
+  else if (lastSavedAt) { s.classList.add("saved"); s.textContent = "保存 " + fmtTime(lastSavedAt); }
+  else s.textContent = "変更なし";
+}
+let draftTimer;
+ed.addEventListener("input", () => {
+  const f = cur(); if (!f) return;
+  const was = isDirty(f);
+  f.content = ed.value;
+  updateCount();
+  if (was !== isDirty(f)) renderTabs();
+  updateStatus();
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    if (isDirty(f)) store.set("draft:" + f.path, { content: f.content, at: Date.now() });
+    else store.del("draft:" + f.path);
+  }, 800);
+});
+window.addEventListener("beforeunload", (e) => { if (anyDirty()) { e.preventDefault(); e.returnValue = ""; } });
+
+async function confirmLeave() {
+  const v = await sheet(`
+    <div class="dlg-ico">${icon("i-alert")}</div>
+    <h2>保存していない変更があります</h2>
+    <p>このまま戻っても、下書きはこの端末に残ります。一時保存してから戻りますか？</p>
+    <div class="btns"><button class="btn btn-ghost" data-v="leave">保存せず戻る</button><button class="btn btn-primary" data-v="save">一時保存して戻る</button></div>`);
+  if (v === "save") return await doCommit(false);
+  return v === "leave";
+}
+$("#backBtn").onclick = async () => {
+  if (anyDirty() && !(await confirmLeave())) return;
+  folder = null; files = [];
+  $("#edit").hidden = true; $("#browse").hidden = false;
+  renderRecent();
+  if (!curEntries.length) loadDir(curDir); else renderRows();
+};
+
+/* ============================== 入力補助 ============================== */
+function speakers() {
+  const src = files.find((f) => f.name === "script.md") || cur();
+  const freq = new Map();
+  for (const line of (src ? src.content : "").split("\n")) {
+    const m = line.match(/^([^\s：:#▶「『（(]{1,20})：\s*$/);
+    if (m) freq.set(m[1], (freq.get(m[1]) || 0) + 1);
+  }
+  const extra = store.get("speakers:" + folder, []);
+  const names = [...freq.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]);
+  for (const n of extra) if (!names.includes(n)) names.push(n);
+  return names.slice(0, 12);
+}
+function renderQuick() {
+  const isScript = cur() && cur().name === "script.md";
+  const syms = [["……", "……"], ["――", "――"], ["「」", "「|」"], ["『』", "『|』"], ["（）", "（|）"], ["！", "！"], ["？", "？"], ["、", "、"], ["。", "。"]];
+  const marks = isScript
+    ? [["選択肢", "###選択肢AB\n▶|\n▶\n"], ["▶", "▶"], ["###", "###"]]
+    : [["・", "・"], ["キャラクター：", "キャラクター："], ["プロット：", "プロット：\n・"]];
+  let html = `<button class="q icon" data-cmd="undo" aria-label="元に戻す">${icon("i-undo")}</button>
+              <button class="q icon" data-cmd="redo" aria-label="やり直す">${icon("i-redo")}</button><span class="qsep"></span>`;
+  if (isScript) {
+    html += speakers().map((n) => `<button class="q name" data-name="${esc(n)}">${esc(n)}</button>`).join("");
+    html += `<button class="q name" data-cmd="newname">＋話者</button><span class="qsep"></span>`;
+  }
+  html += syms.map(([l, v]) => `<button class="q sym" data-ins="${esc(v)}">${esc(l)}</button>`).join("");
+  html += `<span class="qsep"></span>` + marks.map(([l, v]) => `<button class="q" data-ins="${esc(v)}">${esc(l)}</button>`).join("");
+  $("#quick").innerHTML = html;
+}
+// 保存ボタンを押した瞬間にキーボードが閉じてボタン位置がずれ、タップが外れるのを防ぐ
+$(".actions").addEventListener("pointerdown", (e) => { if (e.target.closest(".btn")) e.preventDefault(); });
+$("#quick").addEventListener("pointerdown", (e) => { if (e.target.closest(".q") && !e.target.closest('[data-cmd="newname"]')) e.preventDefault(); });
+$("#quick").addEventListener("click", async (e) => {
+  const b = e.target.closest(".q"); if (!b) return;
+  if (mode === "read") setMode("write");
+  if (b.dataset.cmd === "undo" || b.dataset.cmd === "redo") { ed.focus(); document.execCommand(b.dataset.cmd); return; }
+  if (b.dataset.cmd === "newname") return askSpeaker();
+  if (b.dataset.name) return insertSpeaker(b.dataset.name);
+  if (b.dataset.ins) insertTemplate(b.dataset.ins);
+});
+function askSpeaker() {
+  const sel = [ed.selectionStart, ed.selectionEnd];
+  sheet(`<h2>話者を追加</h2><p>名前を入れると「名前：」の行を挿入し、ボタンにも追加します。</p>
+    <form id="spForm"><input class="text-in" id="spName" type="text" autocomplete="off" placeholder="例：梶山徹平" enterkeyhint="done">
+    <div class="btns"><button type="button" class="btn btn-ghost" data-v="">キャンセル</button><button type="submit" class="btn btn-primary">挿入</button></div></form>`, {
+    onMount(el, close) {
+      const inp = el.querySelector("#spName");
+      setTimeout(() => inp.focus(), 50);
+      el.querySelector("#spForm").addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        const n = inp.value.trim().replace(/[：:]$/, "");
+        close("ok");
+        if (!n) return;
+        const extra = store.get("speakers:" + folder, []);
+        if (!extra.includes(n)) { extra.push(n); store.set("speakers:" + folder, extra); }
+        ed.focus(); ed.setSelectionRange(sel[0], sel[1]);
+        insertSpeaker(n); renderQuick();
+      });
+    },
+  });
+}
+function insertText(text) {
+  ed.focus();
+  if (!document.execCommand("insertText", false, text)) {
+    ed.setRangeText(text, ed.selectionStart, ed.selectionEnd, "end");
+    ed.dispatchEvent(new Event("input"));
+  }
+}
+function insertTemplate(tpl) {
+  const [before, after = null] = tpl.split("|");
+  if (after === null) return insertText(tpl);
+  const sel = ed.value.slice(ed.selectionStart, ed.selectionEnd);
+  insertText(before + sel + after);
+  if (!sel) { const p = ed.selectionStart - after.length; ed.setSelectionRange(p, p); }
+}
+function insertSpeaker(name) {
+  ed.focus();
+  const v = ed.value, pos = ed.selectionStart;
+  const lineStart = v.lastIndexOf("\n", pos - 1) + 1;
+  const prev = v.slice(0, lineStart);
+  let lead = "";
+  if (v.slice(lineStart, pos).trim()) lead = "\n\n";
+  else if (prev.trim() && !prev.endsWith("\n\n")) lead = "\n";
+  insertText(lead + name + "：\n");
+}
+
+/* ============================== 書く / 読む ============================== */
+function setMode(m) {
+  mode = m;
+  $("#modeWrite").classList.toggle("on", m === "write");
+  $("#modeRead").classList.toggle("on", m === "read");
+  ed.hidden = m === "read";
+  $("#preview").hidden = m === "write";
+  if (m === "read") { ed.blur(); renderPreview(); }
+}
+$("#modeWrite").onclick = () => { setMode("write"); ed.focus(); };
+$("#modeRead").onclick = () => setMode("read");
+function renderPreview() {
+  const blocks = cur().content.replace(/\r/g, "").split(/\n{2,}/);
+  $("#preview").innerHTML = blocks.map((b) => {
+    const lines = b.split("\n");
+    let html = "", i = 0;
+    const m = lines[0].match(/^(.{1,20})：\s*$/);
+    if (m) { html += `<div class="pv-name">${esc(m[1])}</div>`; i = 1; }
+    for (; i < lines.length; i++) {
+      const L = lines[i];
+      if (/^#{3,}/.test(L)) html += `<div><span class="pv-mark">${esc(L.replace(/^#+|#+$/g, "").trim())}</span></div>`;
+      else if (/^▶/.test(L)) html += `<div class="pv-line pv-choice">${esc(L)}</div>`;
+      else html += `<div class="pv-line">${esc(L) || "&nbsp;"}</div>`;
+    }
+    return `<div class="pv-block">${html}</div>`;
+  }).join("") || `<div class="empty">まだ何も書かれていません</div>`;
+}
+
+/* ============================== 保存 ============================== */
+function setBusy(b, which) {
+  busy = b;
+  $("#commitBtn").disabled = b; $("#mergeBtn").disabled = b;
+  if (which) {
+    const isM = which === "merge";
+    const btn = isM ? $("#mergeBtn") : $("#commitBtn");
+    btn.innerHTML = b ? `<span class="spinner"></span>${isM ? "マージ中" : "保存中"}`
+                      : `${icon(isM ? "i-merge" : "i-save")}${isM ? "最終保存" : "一時保存"}`;
+  }
+}
+async function conflictDialog(f, theirs) {
+  const v = await sheet(`
+    <div class="dlg-ico">${icon("i-alert")}</div>
+    <h2>GitHub 上のファイルが変わっています</h2>
+    <p>開いた後に <b>${esc(f.name)}</b> が Claude や別の端末で更新されました。どちらの内容を残しますか？</p>
+    <div class="btns col">
+      <button class="btn btn-primary" data-v="mine">自分の編集で上書きする</button>
+      <button class="btn btn-ghost" data-v="theirs">GitHub の内容を読み込む（自分の編集は下書きに退避）</button>
+      <button class="btn btn-ghost" data-v="">キャンセル</button>
+    </div>`);
+  if (v === "theirs") {
+    store.set("draft:" + f.path, { content: f.content, at: Date.now() });
+    f.content = f.saved = theirs.text; f.sha = theirs.sha;
+    if (cur() === f) { ed.value = f.content; updateCount(); if (mode === "read") renderPreview(); }
+    renderTabs(); updateStatus(); renderQuick();
+    toast("最新の内容を読み込みました（自分の編集は下書きとして保管）");
+  }
+  return v;
+}
+// 1ファイルを執筆用ブランチにコミットする。true=保存済み / false=中止
+async function commitFile(f, auto) {
+  const content = f.content;
+  const parent = f.path.split("/").slice(-2, -1)[0];
+  const message = `${auto ? "自動保存" : "一時保存"}: ${parent}/${f.name}`;
+  let sha = f.sha;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      f.sha = await ghWriteFile(f.path, content, message, sha) || f.sha;
+      f.saved = content;
+      if (f.content === f.saved) store.del("draft:" + f.path);
+      dirCache.delete(f.path.split("/").slice(0, -1).join("/"));
+      return true;
+    } catch (e) {
+      // 409/422 = GitHub 側の版が違う（Claude や別端末が更新した）
+      if (attempt || !["conflict", "invalid"].includes(e.code)) throw e;
+      let theirs;
+      try { theirs = await ghReadFile(f.path); } catch { throw e; }
+      if (theirs.sha === sha) throw e;
+      if (theirs.text === content) { f.sha = theirs.sha; f.saved = content; return true; }
+      if (auto) { toast(`${f.name} が GitHub 上で更新されていたため自動保存を止めました`, true); return false; }
+      setBusy(false, "commit");
+      const v = await conflictDialog(f, theirs);
+      setBusy(true, "commit");
+      if (v !== "mine") return false;
+      sha = theirs.sha;
+    }
+  }
+  return false;
+}
+async function doCommit(auto) {
+  if (busy) return false;
+  const dirty = files.filter(isDirty);
+  if (!dirty.length) { if (!auto) toast("変更はありません"); return true; }
+  setBusy(true, auto ? null : "commit"); updateStatus("saving");
+  let ok = true;
+  try {
+    for (const f of dirty) ok = (await commitFile(f, auto)) && ok;
+    if (ok) {
+      lastSavedAt = new Date();
+      toast(`${auto ? "自動保存" : "一時保存"}しました（${settings.branch} にコミット）`);
+    }
+    renderTabs(); updateStatus();
+    return ok;
+  } catch (e) {
+    updateStatus("error");
+    if (isConnError(e)) toast("GitHub のトークンが無効か権限がないため保存できませんでした。設定からトークンを入れ直してください", true);
+    else toast((auto ? "自動保存に失敗：" : "保存に失敗：") + e.message.slice(0, 160), true);
+    return false;
+  } finally {
+    setBusy(false, auto ? null : "commit");
+  }
+}
+$("#commitBtn").onclick = () => doCommit(false);
+
+async function doMerge() {
+  if (busy) return;
+  ed.blur();
+  const dirty = files.filter(isDirty).length;
+  const v = await sheet(`
+    <div class="dlg-ico">${icon("i-merge")}</div>
+    <h2>mainブランチにマージしますか？</h2>
+    <p>執筆用ブランチの内容を <b>${esc(settings.base)}</b> に反映して最終保存します。${dirty ? `未保存の変更（${dirty}ファイル）は先に一時保存されます。` : ""}</p>
+    <div class="flow"><code>${esc(settings.branch)}</code><span class="arrow">→</span><code>${esc(settings.base)}</code></div>
+    <div class="btns"><button class="btn btn-ghost" data-v="">キャンセル</button><button class="btn btn-primary" data-v="ok">マージする</button></div>`);
+  if (v !== "ok") return;
+  if (dirty && !(await doCommit(false))) return;
+  setBusy(true, "merge"); updateStatus("saving");
+  try {
+    const r = await ghMerge(settings.base, settings.branch, `最終保存: ${settings.branch} を ${settings.base} にマージ`);
+    if (r === "noop") { updateStatus(); toast(`${settings.base} にはすでに反映済みです`); return; }
+    // main 側の変更（Claude の校正など）を執筆用ブランチにも取り込んでおく
+    try { await ghMerge(settings.branch, settings.base, `${settings.base} の最新を ${settings.branch} に取り込み`); } catch {}
+    dirCache.clear();
+    updateStatus();
+    await sheet(`
+      <div class="dlg-ico ok">${icon("i-check")}</div>
+      <h2>最終保存しました</h2>
+      <p>${esc(settings.branch)} を ${esc(settings.base)} にマージしました。</p>
+      <div class="btns"><button class="btn btn-primary" data-v="ok">OK</button></div>`);
+  } catch (e) {
+    updateStatus(anyDirty() ? "error" : undefined);
+    const conflict = e.code === "conflict";
+    await sheet(`
+      <div class="dlg-ico bad">${icon("i-alert")}</div>
+      <h2>マージできませんでした</h2>
+      ${isConnError(e) ? `<p>このトークンでは ${esc(settings.base)} に書き込めませんでした。トークンの権限（Contents: Read and write）と、${esc(settings.base)} ブランチの保護設定を確認してください。</p>`
+        : conflict ? `<p>${esc(settings.base)} と内容がぶつかっています（コンフリクト）。一時保存した内容は ${esc(settings.branch)} ブランチに残っています。Claude Code に「${esc(settings.branch)} ブランチと ${esc(settings.base)} のコンフリクトを解消して」と頼むと解決できます。</p>`
+        : `<p>GitHub から次のエラーが返りました。</p><div class="mono-box">${esc(e.message.slice(0, 800))}</div>`}
+      <div class="btns"><button class="btn btn-primary" data-v="ok">閉じる</button></div>`);
+  } finally {
+    setBusy(false, "merge");
+  }
+}
+$("#mergeBtn").onclick = doMerge;
+
+/* ============================== 自動保存 ============================== */
+let autoTimer;
+function scheduleAutosave() {
+  clearInterval(autoTimer);
+  if (!settings.autoMin) return;
+  autoTimer = setInterval(() => { if (folder !== null && anyDirty() && !busy) doCommit(true); }, settings.autoMin * 60 * 1000);
+}
+
+/* ============================== 設定 ============================== */
+function openSettings() {
+  const autos = [0, 1, 3, 5, 10, 15, 30];
+  const before = settings.branch + "|" + settings.owner + "|" + settings.repo;
+  sheet(`
+    <h2>設定</h2>
+    <div class="field"><div class="lbl">自動で一時保存<small>変更があるときだけコミットします</small></div>
+      <select id="sAuto">${autos.map((m) => `<option value="${m}" ${m === settings.autoMin ? "selected" : ""}>${m ? m + "分ごと" : "オフ"}</option>`).join("")}</select></div>
+    <div class="field"><div class="lbl">書体</div>
+      <div class="seg"><button id="sGothic" class="${settings.font === "gothic" ? "on" : ""}">UDゴシック</button><button id="sMincho" class="${settings.font === "mincho" ? "on" : ""}">UD明朝</button></div></div>
+    <div class="field"><div class="lbl">文字の大きさ</div>
+      <div class="stepper"><button id="sSizeM" aria-label="小さく">−</button><span id="sSize">${settings.size}px</span><button id="sSizeP" aria-label="大きく">＋</button></div></div>
+    <div class="field"><div class="lbl">行間</div>
+      <div class="stepper"><button id="sLhM" aria-label="狭く">−</button><span id="sLh">${settings.lh.toFixed(1)}</span><button id="sLhP" aria-label="広く">＋</button></div></div>
+    <div class="field"><div class="lbl">執筆用ブランチ<small>一時保存のコミット先</small></div>
+      <input type="text" id="sBranch" value="${esc(settings.branch)}" autocomplete="off" autocapitalize="off"></div>
+    <div class="field" style="border-bottom:0"><div class="lbl">リポジトリ<small>${esc(settings.owner)}/${esc(settings.repo)} → 最終保存先 ${esc(settings.base)}</small></div>
+      <button class="btn btn-ghost" id="sLogout" data-v="logout" style="height:38px;font-size:13px">接続を解除</button></div>
+    <div class="btns"><button class="btn btn-primary" data-v="ok">閉じる</button></div>`, {
+    onMount(el) {
+      const upd = () => { applySettings(); el.querySelector("#sSize").textContent = settings.size + "px"; el.querySelector("#sLh").textContent = settings.lh.toFixed(1); };
+      el.querySelector("#sAuto").onchange = (e) => { settings.autoMin = +e.target.value; upd(); };
+      el.querySelector("#sGothic").onclick = (e) => { settings.font = "gothic"; e.target.classList.add("on"); el.querySelector("#sMincho").classList.remove("on"); upd(); };
+      el.querySelector("#sMincho").onclick = (e) => { settings.font = "mincho"; e.target.classList.add("on"); el.querySelector("#sGothic").classList.remove("on"); upd(); };
+      el.querySelector("#sSizeM").onclick = () => { settings.size = Math.max(13, settings.size - 1); upd(); };
+      el.querySelector("#sSizeP").onclick = () => { settings.size = Math.min(26, settings.size + 1); upd(); };
+      el.querySelector("#sLhM").onclick = () => { settings.lh = Math.max(1.4, +(settings.lh - 0.1).toFixed(1)); upd(); };
+      el.querySelector("#sLhP").onclick = () => { settings.lh = Math.min(2.6, +(settings.lh + 0.1).toFixed(1)); upd(); };
+      el.querySelector("#sBranch").onchange = (e) => {
+        const b = e.target.value.trim();
+        if (b && b !== settings.base) { settings.branch = b; upd(); } else e.target.value = settings.branch;
+      };
+    },
+  }).then((v) => {
+    if (v === "logout") {
+      store.del("token"); token = "";
+      folder = null; files = []; dirCache.clear();
+      $("#edit").hidden = true; $("#browse").hidden = false;
+      return connectHelp("");
+    }
+    const after = settings.branch + "|" + settings.owner + "|" + settings.repo;
+    if (after !== before && folder === null) { dirCache.clear(); loadDir(ROOT); }
+  });
+}
+$("#browseSettings").onclick = openSettings;
+$("#editSettings").onclick = openSettings;
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); if (folder !== null) doCommit(false); }
+});
+
+/* ============================== 起動 ============================== */
+async function boot() {
+  renderCrumbs();
+  if (!token || !settings.owner || !settings.repo) return connectHelp("");
+  $("#dirList").innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
+  loadDir(curDir);
+}
+applySettings();
+renderRecent();
+boot();
+</script>
+</body>
+</html>

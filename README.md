@@ -1,4 +1,4 @@
-# Rat Park Editor
+# RatPark執筆エディタ
 
 スマホで小説・シナリオを書くためのエディタです（GitHub Pages で配信）。
 原稿は別のリポジトリにあり、このページは GitHub API でそれを読み書きします。

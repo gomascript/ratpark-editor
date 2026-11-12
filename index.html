@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#ffffff">
 <meta name="robots" content="noindex">
-<title>Rat Park Editor</title>
+<title>RatPark執筆エディタ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&display=swap" rel="stylesheet">
@@ -56,20 +56,39 @@ svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-widt
 .topbar { display: flex; align-items: center; gap: 8px; padding: calc(10px + var(--safe-t)) 12px 10px; border-bottom: 1px solid var(--line); background: var(--bg); min-height: 56px; }
 .icon-btn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
 .icon-btn:active { background: var(--surface-2); }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; min-width: 0; white-space: nowrap; letter-spacing: -.01em; }
+.brand-text { overflow: hidden; text-overflow: ellipsis; }
 .brand-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: var(--on-accent); }
 .brand-mark svg { width: 16px; height: 16px; stroke-width: 2.2; }
 .spacer { flex: 1; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
 
 /* フォルダ選択 */
-.browse-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px calc(24px + var(--safe-b)); }
+.browse-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px calc(24px + var(--safe-b)); }
 .wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
 .search { position: relative; display: block; }
 .search input { width: 100%; height: 46px; border: 1px solid var(--line); border-radius: 12px; padding: 0 14px 0 42px; background: var(--surface); outline: none; font-size: 16px; }
 .search input:focus { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 3px var(--accent-soft); }
 .search svg { position: absolute; left: 13px; top: 13px; color: var(--muted); }
+.vtabs { display: flex; border-bottom: 1px solid var(--line); background: var(--bg); padding: 0 12px; }
+.vtabs button { flex: 1; padding: 11px 8px 10px; font-size: 14px; color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.vtabs button.on { color: var(--text); font-weight: 700; border-bottom-color: var(--accent); }
+.vtabs .n { font-size: 11.5px; font-weight: 400; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 0 7px; }
+.crumb-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.crumb-row .crumbs { flex: 1; min-width: 0; }
+.dir-total { font-size: 12px; color: var(--muted); white-space: nowrap; flex: none; }
+.dir-total b { color: var(--text); font-variant-numeric: tabular-nums; }
+.meter { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.meter .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; min-width: 2px; transition: width .25s ease; }
+.meter .bar.load i { width: 30% !important; background: var(--line); animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity: .35; } }
+.meter .num { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 4.5em; text-align: right; }
+.meter .num b { color: var(--text); font-size: 13px; }
+.meter.none .num { color: var(--muted); }
+.add-row { color: var(--accent-ink); font-weight: 700; }
+.add-row .ico { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
 .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 13px; color: var(--muted); }
 .crumbs button { padding: 4px 6px; border-radius: 6px; color: var(--accent-ink); }
 .crumbs button:last-child { color: var(--text); font-weight: 700; }
@@ -103,39 +122,54 @@ svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-widt
 .status.saving { background: var(--warn-soft); color: var(--warn-ink); }
 .status.saved { background: var(--ok-soft); color: var(--ok); }
 .status.error { background: var(--danger-soft); color: var(--danger); }
-.tabs { display: flex; gap: 4px; padding: 6px 12px 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; align-items: flex-end; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab { padding: 9px 14px 10px; font-size: 14px; color: var(--muted); white-space: nowrap; border-bottom: 2.5px solid transparent; margin-bottom: -1px; }
-.tab.active { color: var(--text); font-weight: 700; border-bottom-color: var(--accent); }
-.tab .mod { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-left: 6px; vertical-align: 2px; }
-.tab-tools { margin-left: auto; align-self: center; }
+/* エディタのヘッダーは1行にまとめ、本文の表示領域を広く取る */
+.ed-bar { gap: 4px; padding: calc(4px + var(--safe-t)) 6px 4px; min-height: 48px; }
+.ed-bar .icon-btn { width: 36px; height: 36px; }
+.ed-title .t2 { display: flex; align-items: center; gap: 5px; }
+.sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: none; }
+.ed-title .t2.dirty .sdot { background: var(--accent); }
+.ed-title .t2.dirty #status { color: var(--accent-ink); font-weight: 700; }
+.ed-title .t2.saving .sdot { background: #d9a300; }
+.ed-title .t2.saved .sdot { background: var(--ok); }
+.ed-title .t2.saved #status { color: var(--ok); }
+.ed-title .t2.error .sdot { background: var(--danger); }
+.ed-title .t2.error #status { color: var(--danger); font-weight: 700; }
+.ed-title .t2 b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 700; }
+.ftabs { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; flex: none; max-width: 46vw; overflow-x: auto; scrollbar-width: none; }
+.ftabs::-webkit-scrollbar { display: none; }
+.ftabs button { padding: 4px 9px; font-size: 12.5px; border-radius: 8px; color: var(--muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.ftabs button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.ftabs .mod { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.icon-btn.mode-on { background: var(--accent-soft); color: var(--accent-ink); }
 .seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; }
 .seg button { padding: 4px 10px; font-size: 12.5px; border-radius: 8px; color: var(--muted); }
 .seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .ed-main { flex: 1; min-height: 0; display: flex; }
 #editor { flex: 1; width: 100%; height: 100%; resize: none; border: 0; outline: none; background: var(--bg); color: var(--text);
   font-family: var(--editor-font); font-size: var(--editor-size); line-height: var(--editor-lh);
-  padding: 18px max(18px, calc((100% - 40em) / 2)) 40vh; letter-spacing: .02em; caret-color: var(--accent); }
+  padding: 12px max(16px, calc((100% - 40em) / 2)) 40vh; letter-spacing: .02em; caret-color: var(--accent); }
 #editor::selection { background: #f6d5c7; }
-.preview { flex: 1; overflow-y: auto; padding: 18px max(18px, calc((100% - 40em) / 2)) 30vh; font-family: var(--editor-font); font-size: var(--editor-size); line-height: var(--editor-lh); letter-spacing: .02em; }
+.preview { flex: 1; overflow-y: auto; padding: 12px max(16px, calc((100% - 40em) / 2)) 30vh; font-family: var(--editor-font); font-size: var(--editor-size); line-height: var(--editor-lh); letter-spacing: .02em; }
 .pv-block { margin: 0 0 1.1em; }
 .pv-name { font-family: var(--gothic); font-size: .74em; font-weight: 700; color: var(--accent-ink); letter-spacing: .04em; }
 .pv-line { white-space: pre-wrap; word-break: break-word; }
 .pv-mark { font-family: var(--gothic); font-size: .72em; font-weight: 700; display: inline-block; padding: 2px 10px; border-radius: 6px; background: var(--surface-2); color: var(--muted); margin: .6em 0 .5em; }
 .pv-choice { color: var(--accent-ink); font-weight: 700; }
 .dock { border-top: 1px solid var(--line); background: var(--bg); padding-bottom: var(--safe-b); }
-.quick { display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px; scrollbar-width: none; }
+.quick-row { display: flex; align-items: center; }
+#edit.reading .quick-row { display: none; }
+.quick { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding: 6px 10px; scrollbar-width: none; }
 .quick::-webkit-scrollbar { display: none; }
-.q { flex: none; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
+.q { flex: none; height: 34px; padding: 0 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
 .q:active { background: var(--accent-soft); border-color: var(--accent); }
 .q.name { color: var(--accent-ink); border-color: #f0d3c6; background: #fff8f5; font-weight: 700; }
 .q.sym { min-width: 40px; font-family: var(--mincho); }
 .q.icon { width: 40px; padding: 0; display: grid; place-items: center; }
 .qsep { flex: none; width: 1px; background: var(--line); margin: 6px 2px; }
-.actions { display: flex; align-items: center; gap: 8px; padding: 6px 10px 10px; }
-.count { font-size: 12px; color: var(--muted); line-height: 1.25; min-width: 0; flex: 1; }
+.actions { display: flex; align-items: center; gap: 8px; padding: 2px 10px 8px; }
+.count { font-size: 11.5px; color: var(--muted); line-height: 1.3; min-width: 0; flex: 1; }
 .count b { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
-.btn { height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+.btn { height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
 .btn svg.i { width: 18px; height: 18px; stroke-width: 2; }
 .btn-outline { border: 1.5px solid var(--accent); color: var(--accent-ink); background: var(--bg); }
 .btn-outline:active { background: var(--accent-soft); }
@@ -143,9 +177,11 @@ svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-widt
 .btn-primary:active { background: var(--accent-ink); }
 .btn-ghost { background: var(--surface-2); color: var(--text); }
 .btn[disabled] { opacity: .5; pointer-events: none; }
-body.kb .actions .count { display: none; }
-body.kb .actions .btn { height: 38px; font-size: 14px; padding: 0 12px; }
-body.kb .actions { padding-top: 2px; padding-bottom: 6px; }
+/* キーボード表示中は保存ボタン行をたたみ、入力補助の右端に「保存」だけ残す */
+.kb-save { display: none; height: 34px; padding: 0 12px; font-size: 13.5px; margin-right: 8px; flex: none; box-shadow: -10px 0 8px -4px var(--bg); }
+body.kb .kb-save { display: inline-flex; }
+body.kb .actions { display: none; }
+body.kb .quick { padding-right: 6px; }
 
 /* シート・トースト */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; display: flex; align-items: flex-end; justify-content: center; animation: fade .15s ease; }
@@ -159,7 +195,7 @@ body.kb .actions { padding-top: 2px; padding-bottom: 6px; }
 .sheet .btns.col { flex-direction: column; }
 .sheet .btns .btn { flex: 1; }
 @media (min-width: 640px) { .scrim { align-items: center; } .sheet { border-radius: 20px; } }
-@media (prefers-reduced-motion: reduce) { .scrim, .sheet, .toast, .skeleton { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .scrim, .sheet, .toast, .skeleton, .meter .bar.load i { animation: none; } .meter .bar i { transition: none; } }
 .dlg-ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); margin: 4px 0 12px; }
 .dlg-ico svg.i { width: 26px; height: 26px; }
 .dlg-ico.ok { background: var(--ok-soft); color: var(--ok); }
@@ -206,32 +242,39 @@ a { color: var(--accent-ink); }
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17H2.5z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></symbol>
   <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></symbol>
 </svg>
 
 <!-- フォルダ選択 -->
 <section id="browse" class="screen">
   <header class="topbar">
-    <div class="brand"><span class="brand-mark"><svg class="i"><use href="#i-pen"/></svg></span>Rat Park Editor</div>
+    <div class="brand"><span class="brand-mark"><svg class="i"><use href="#i-pen"/></svg></span><span class="brand-text">RatPark執筆エディタ</span></div>
     <span class="spacer"></span>
     <span class="chip" id="branchChip" title="執筆用ブランチ"><span class="dot"></span><span id="branchName">writing</span></span>
     <button class="icon-btn" id="browseSettings" aria-label="設定"><svg class="i"><use href="#i-gear"/></svg></button>
   </header>
+  <nav class="vtabs" id="vtabs" role="tablist">
+    <button role="tab" data-view="folder" id="vtFolder">シナリオフォルダ</button>
+    <button role="tab" data-view="recent" id="vtRecent">最近開いた<span class="n" id="recentN" hidden></span></button>
+  </nav>
   <div class="browse-body">
     <div class="wrap">
       <div id="connectBox" hidden></div>
       <div id="browseMain">
-        <label class="search"><svg class="i"><use href="#i-search"/></svg>
-          <input id="search" type="search" placeholder="このフォルダ内を絞り込み（例：ベンチ、12）" autocomplete="off" enterkeyhint="search">
-        </label>
-        <div id="recentWrap" hidden>
-          <div class="section-label">最近開いたシナリオ</div>
-          <div class="list" id="recent" style="margin-top:8px"></div>
+        <div id="paneFolder" style="display:flex;flex-direction:column;gap:10px">
+          <label class="search"><svg class="i"><use href="#i-search"/></svg>
+            <input id="search" type="search" placeholder="このフォルダ内を絞り込み" autocomplete="off" enterkeyhint="search">
+          </label>
+          <div class="crumb-row"><nav class="crumbs" id="crumbs"></nav><span class="dir-total" id="dirTotal"></span></div>
+          <div class="list" id="dirList"></div>
+          <p class="hint" style="margin-top:4px">フォルダを選ぶと中の script.md / plot.md を開いて編集できます。バーは script.md の文字数（空白を除く）です。保存先は GitHub の執筆用ブランチです。</p>
         </div>
-        <div class="section-label">シナリオフォルダ</div>
-        <nav class="crumbs" id="crumbs" style="margin-top:6px"></nav>
-        <div class="list" id="dirList" style="margin-top:6px"></div>
-        <p class="hint" style="margin-top:10px">フォルダを選ぶと中の script.md / plot.md を開いて編集できます。保存先は GitHub の執筆用ブランチです。</p>
+        <div id="paneRecent" hidden>
+          <div class="list" id="recent"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -239,25 +282,25 @@ a { color: var(--accent-ink); }
 
 <!-- エディタ -->
 <section id="edit" class="screen" hidden>
-  <header class="topbar">
+  <header class="topbar ed-bar">
     <button class="icon-btn" id="backBtn" aria-label="フォルダ選択へ戻る"><svg class="i"><use href="#i-back"/></svg></button>
-    <div class="ed-title"><div class="t1" id="edTitle"></div><div class="t2" id="edPath"></div></div>
-    <span class="status" id="status">—</span>
+    <div class="ed-title"><div class="t1" id="edTitle"></div>
+      <div class="t2" id="edMeta"><span class="sdot"></span><span><b id="chars">0</b>字</span><span id="status"></span></div></div>
+    <div class="ftabs" id="tabs" role="tablist" aria-label="ファイル"></div>
+    <button class="icon-btn" id="modeBtn" aria-label="読むモードにする" aria-pressed="false"><svg class="i"><use href="#i-book"/></svg></button>
     <button class="icon-btn" id="editSettings" aria-label="設定"><svg class="i"><use href="#i-gear"/></svg></button>
   </header>
-  <div class="tabs" id="tabs">
-    <div class="tab-tools">
-      <div class="seg" aria-label="表示モード"><button id="modeWrite" class="on">書く</button><button id="modeRead">読む</button></div>
-    </div>
-  </div>
   <div class="ed-main">
     <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="本文"></textarea>
     <div id="preview" class="preview" hidden></div>
   </div>
   <div class="dock">
-    <div class="quick" id="quick"></div>
+    <div class="quick-row">
+      <div class="quick" id="quick"></div>
+      <button class="btn btn-outline kb-save" id="kbSave"><svg class="i"><use href="#i-save"/></svg>保存</button>
+    </div>
     <div class="actions">
-      <div class="count"><b id="chars">0</b> 字<br><span id="autoInfo">自動保存 オフ</span></div>
+      <div class="count"><span id="autoInfo">自動保存 オフ</span></div>
       <button class="btn btn-outline" id="commitBtn"><svg class="i"><use href="#i-save"/></svg>一時保存</button>
       <button class="btn btn-primary" id="mergeBtn"><svg class="i"><use href="#i-merge"/></svg>最終保存</button>
     </div>
@@ -295,7 +338,7 @@ function applySettings() {
   r.setProperty("--editor-lh", settings.lh);
   store.set("settings", settings);
   $("#branchName").textContent = settings.branch;
-  $("#autoInfo").textContent = settings.autoMin ? `自動保存 ${settings.autoMin}分ごと` : "自動保存 オフ";
+  $("#autoInfo").innerHTML = settings.autoMin ? `自動保存<br>${settings.autoMin}分ごと` : "自動保存<br>オフ";
   scheduleAutosave();
 }
 
@@ -390,6 +433,7 @@ function connectHelp(code, detail) {
   const box = $("#connectBox");
   box.hidden = false;
   $("#browseMain").hidden = true;
+  $("#vtabs").hidden = true;
   const why = {
     bad_token: "トークンが無効か期限切れです。新しいトークンを入れ直してください。",
     forbidden: "このトークンには必要な権限がありません。「Contents: Read and write」を付けたトークンを入れ直してください。",
@@ -428,9 +472,9 @@ function connectHelp(code, detail) {
       if (info.permissions && !info.permissions.push) throw new GhError("forbidden", "書き込み権限がありません");
       if (info.default_branch && settings.base !== info.default_branch && settings.base === "main") settings.base = info.default_branch;
       store.set("token", token); applySettings();
-      box.hidden = true; $("#browseMain").hidden = false;
+      box.hidden = true; $("#browseMain").hidden = false; $("#vtabs").hidden = false;
       toast("GitHub に接続しました");
-      dirCache.clear(); curDir = ROOT; boot();
+      dirCache.clear(); tree = null; countsFailed = false; curDir = ROOT; boot();
     } catch (e) {
       token = store.get("token", "");
       $("#tokBtn").disabled = false;
@@ -495,9 +539,11 @@ function renderRows() {
   const match = (n) => words.every((w) => n.toLowerCase().includes(w));
   const dirs = curEntries.filter((e) => e.type === "dir" && !e.name.startsWith(".") && match(e.name));
   const files = curEntries.filter((e) => e.type === "file" && EDITABLE.test(e.name));
-  let html = dirs.map((d) => `<button class="row" data-dir="${esc(d.path)}">
+  const aggs = dirs.map((d) => scriptAgg(d.path));
+  const max = Math.max(1, ...aggs.map((a) => (a ? a.sum : 0)));
+  let html = dirs.map((d, i) => `<button class="row" data-dir="${esc(d.path)}">
       <span class="ico">${icon("i-folder")}</span>
-      <span class="txt"><div class="name">${esc(d.name)}</div></span>
+      <span class="txt"><div class="name">${esc(d.name)}</div>${meterHtml(aggs[i], max)}</span>
       <svg class="i chev"><use href="#i-chev"/></svg></button>`).join("");
   if (files.length && !q) {
     html = `<button class="row" data-open="${esc(curDir)}">
@@ -505,7 +551,23 @@ function renderRows() {
       <span class="txt"><div class="name">このフォルダを開く</div><div class="sub">${files.map((f) => esc(f.name)).join(" · ")}</div></span>
       <span class="open-pill">開く</span></button>` + html;
   }
-  $("#dirList").innerHTML = html || `<div class="empty">${q ? "見つかりませんでした" : "フォルダがありません"}</div>`;
+  if (!q) html += `<button class="row add-row" id="addFolder">
+      <span class="ico">${icon("i-folder-plus")}</span>
+      <span class="txt"><div class="name">フォルダを追加</div><div class="sub">空の script.md と plot.md も作成します</div></span></button>`;
+  $("#dirList").innerHTML = html || `<div class="empty">見つかりませんでした</div>`;
+  const tot = scriptAgg(curDir);
+  $("#dirTotal").innerHTML = tot && tot.files && tot.done === tot.files
+    ? `合計 <b>${tot.sum.toLocaleString()}</b>字 · ${tot.files}本` : "";
+}
+// 文字数メーター。a=null は集計中、a.files=0 は script.md がない
+function meterHtml(a, max) {
+  if (countsFailed) return "";
+  if (!a) return `<div class="meter"><span class="bar load"><i></i></span><span class="num">…</span></div>`;
+  if (!a.files) return `<div class="meter none"><span class="bar"></span><span class="num">script なし</span></div>`;
+  if (a.done < a.files) return `<div class="meter"><span class="bar load"><i></i></span><span class="num">${a.done}/${a.files}</span></div>`;
+  const pct = Math.round((a.sum / max) * 1000) / 10;
+  return `<div class="meter"><span class="bar"><i style="width:${pct}%"></i></span>
+    <span class="num"><b>${a.sum.toLocaleString()}</b>字${a.files > 1 ? ` · ${a.files}本` : ""}</span></div>`;
 }
 function renderCrumbs() {
   const parts = curDir.split("/");
@@ -536,6 +598,7 @@ async function loadDir(path, { autoOpen = false } = {}) {
   curDir = path; curEntries = entries;
   store.set("lastDir", curDir);
   renderCrumbs(); renderRows();
+  refreshCounts();
 }
 function branchMissing() {
   $("#dirList").innerHTML = `<div class="notice">
@@ -547,7 +610,7 @@ function branchMissing() {
     try {
       await ghCreateBranch(settings.branch, settings.base);
       toast(`ブランチ ${settings.branch} を作成しました`);
-      dirCache.clear(); loadDir(ROOT);
+      dirCache.clear(); tree = null; countsFailed = false; loadDir(ROOT);
     } catch (e) {
       if (isConnError(e)) return connectHelp(e.code);
       ev.target.disabled = false;
@@ -557,15 +620,170 @@ function branchMissing() {
 }
 function renderRecent() {
   const rec = store.get("recent", []);
-  $("#recentWrap").hidden = !rec.length;
-  $("#recent").innerHTML = rec.slice(0, 5).map((p) => {
+  $("#recentN").hidden = !rec.length;
+  $("#recentN").textContent = rec.length;
+  if (!rec.length) { $("#recent").innerHTML = `<div class="empty">まだ開いたシナリオはありません</div>`; return; }
+  const aggs = rec.map((p) => scriptAgg(p));
+  const max = Math.max(1, ...aggs.map((a) => (a ? a.sum : 0)));
+  $("#recent").innerHTML = rec.map((p, i) => {
     const parts = p.split("/");
     return `<button class="row" data-open="${esc(p)}"><span class="ico doc">${icon("i-doc")}</span>
-      <span class="txt"><div class="name">${esc(parts.pop())}</div><div class="sub">${esc(parts.slice(1).join(" / "))}</div></span>
+      <span class="txt"><div class="name">${esc(parts.pop())}</div><div class="sub">${esc(parts.slice(1).join(" / "))}</div>${meterHtml(aggs[i], max)}</span>
       <span class="open-pill">開く</span></button>`;
   }).join("");
 }
+
+/* ---------- 一覧の切り替え（シナリオフォルダ / 最近開いた） ---------- */
+let view = store.get("view", "folder");
+function setView(v) {
+  view = v === "recent" ? "recent" : "folder";
+  store.set("view", view);
+  $("#vtFolder").classList.toggle("on", view === "folder");
+  $("#vtRecent").classList.toggle("on", view === "recent");
+  $("#vtFolder").setAttribute("aria-selected", view === "folder");
+  $("#vtRecent").setAttribute("aria-selected", view === "recent");
+  $("#paneFolder").hidden = view !== "folder";
+  $("#paneRecent").hidden = view !== "recent";
+  $("#vtabs").hidden = !$("#connectBox").hidden;
+  if (view === "recent") { renderRecent(); refreshCounts(); }
+}
+$("#vtabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
+
+/* ---------- script.md の文字数 ---------- */
+// scenario 以下のツリーを1回で取得し、script.md の blob ごとに文字数を数える。
+// blob の sha は内容で決まるので、数えた結果は端末に保存して使い回す（変わったファイルだけ取り直す）。
+let tree = null, treeLoading = null, countsFailed = false;
+const ccache = store.get("charCounts", {});
+let ccSaveTimer, rowsTimer;
+function saveCounts() {
+  clearTimeout(ccSaveTimer);
+  ccSaveTimer = setTimeout(() => {
+    const keys = Object.keys(ccache);
+    if (keys.length > 4000) for (const k of keys.slice(0, keys.length - 3000)) delete ccache[k];
+    store.set("charCounts", ccache);
+  }, 500);
+}
+function setCount(sha, text) { if (sha) { ccache[sha] = countChars(text); saveCounts(); } }
+function loadTree() {
+  if (tree) return Promise.resolve(tree);
+  if (!treeLoading) {
+    treeLoading = (async () => {
+      const top = await api("GET", `/git/trees/${encPath(settings.branch)}`);
+      const ent = (top.tree || []).find((e) => e.path === ROOT && e.type === "tree");
+      const scripts = new Map();   // フォルダのパス → script.md の blob sha
+      if (ent) {
+        const t = await api("GET", `/git/trees/${ent.sha}?recursive=1`);
+        for (const e of t.tree || []) {
+          if (e.type === "blob" && /(^|\/)script\.md$/.test(e.path))
+            scripts.set((ROOT + "/" + e.path).replace(/\/script\.md$/, ""), e.sha);
+        }
+      }
+      return (tree = { scripts });
+    })().finally(() => { treeLoading = null; });
+  }
+  return treeLoading;
+}
+// path 以下（path 自身を含む）の script.md の合計。ツリー未取得なら null
+function scriptAgg(path) {
+  if (!tree) return null;
+  let sum = 0, files = 0, done = 0;
+  for (const [dir, sha] of tree.scripts) {
+    if (dir !== path && !dir.startsWith(path + "/")) continue;
+    files++;
+    if (sha in ccache) { done++; sum += ccache[sha]; }
+  }
+  return { sum, files, done };
+}
+function rerenderLists() {
+  clearTimeout(rowsTimer);
+  rowsTimer = setTimeout(() => { if (view === "recent") renderRecent(); else if (curEntries.length) renderRows(); }, 200);
+}
+const inflight = new Set();
+async function refreshCounts() {
+  if (countsFailed) return;
+  try { await loadTree(); }
+  catch (e) { countsFailed = true; rerenderLists(); return; }
+  const prefixes = view === "recent" ? store.get("recent", []) : [curDir];
+  const need = [];
+  for (const [dir, sha] of tree.scripts) {
+    if (sha in ccache || inflight.has(sha)) continue;
+    if (prefixes.some((p) => dir === p || dir.startsWith(p + "/"))) { need.push(sha); inflight.add(sha); }
+  }
+  rerenderLists();
+  let i = 0;
+  const worker = async () => {
+    while (i < need.length) {
+      const sha = need[i++];
+      try {
+        const b = await api("GET", `/git/blobs/${sha}`);
+        setCount(sha, b64decode(b.content));
+      } catch (e) { if (isConnError(e)) { i = need.length; } }
+      finally { inflight.delete(sha); }
+      rerenderLists();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, need.length) }, worker));
+}
+function noteScript(f) {
+  // 開いた・保存した script.md の文字数を、ツリーとキャッシュに反映する
+  if (f.name !== "script.md" || !f.sha) return;
+  setCount(f.sha, f.saved);
+  if (tree) tree.scripts.set(f.path.replace(/\/script\.md$/, ""), f.sha);
+}
+
+/* ---------- フォルダを追加 ---------- */
+function suggestFolderName() {
+  let best = null;
+  for (const e of curEntries) {
+    const m = e.type === "dir" && e.name.match(/^(\d+)([_\-\s])/);
+    if (m && (!best || +m[1] > +best[1])) best = m;
+  }
+  return best ? String(+best[1] + 1).padStart(best[1].length, "0") + best[2] : "";
+}
+function addFolderDialog() {
+  const where = curDir.split("/").join(" / ");
+  sheet(`<div class="dlg-ico">${icon("i-folder-plus")}</div>
+    <h2>フォルダを追加</h2>
+    <p><b>${esc(where)}</b> の中に新しいフォルダを作り、空の <b>script.md</b> と <b>plot.md</b> を入れます（${esc(settings.branch)} ブランチに保存）。</p>
+    <form id="nfForm"><input class="text-in" id="nfName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="フォルダ名" enterkeyhint="done" value="${esc(suggestFolderName())}">
+    <p class="tok-err" id="nfErr" hidden style="margin-top:8px"></p>
+    <div class="btns"><button type="button" class="btn btn-ghost" data-v="">キャンセル</button><button type="submit" class="btn btn-primary" id="nfBtn">${icon("i-plus")}作成する</button></div></form>`, {
+    onMount(el, close) {
+      const inp = el.querySelector("#nfName"), err = el.querySelector("#nfErr"), btn = el.querySelector("#nfBtn");
+      setTimeout(() => { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }, 50);
+      const fail = (m) => { err.hidden = false; err.textContent = m; };
+      el.querySelector("#nfForm").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const name = inp.value.trim();
+        if (!name) return fail("フォルダ名を入れてください");
+        if (/[\/\\:*?"<>|]/.test(name) || name.startsWith(".")) return fail("使えない文字が入っています（/ \\ : * ? \" < > | や先頭の .）");
+        if (curEntries.some((e) => e.name === name)) return fail("同じ名前のフォルダがすでにあります");
+        btn.disabled = true; err.hidden = true;
+        btn.innerHTML = `<span class="spinner"></span>作成中`;
+        const base = curDir + "/" + name;
+        try {
+          for (const fn of ["script.md", "plot.md"]) {
+            const sha = await ghWriteFile(`${base}/${fn}`, "", `フォルダ追加: ${name}/${fn}`);
+            if (fn === "script.md" && sha) { setCount(sha, ""); if (tree) tree.scripts.set(base, sha); }
+          }
+        } catch (e) {
+          btn.disabled = false; btn.innerHTML = `${icon("i-plus")}作成する`;
+          if (isConnError(e)) return fail("このトークンでは書き込めません（Contents: Read and write が必要）");
+          if (e.code === "invalid") return fail("作成できませんでした。同じ名前のファイルがすでにあるかもしれません");
+          return fail("作成できませんでした：" + e.message.slice(0, 160));
+        }
+        close("ok");
+        dirCache.delete(curDir);
+        toast(`「${name}」を作成しました`);
+        await loadDir(curDir);
+        openFolder(base);
+      });
+    },
+  });
+}
+
 $("#browse").addEventListener("click", (e) => {
+  if (e.target.closest("#addFolder")) return addFolderDialog();
   const c = e.target.closest("[data-crumb]");
   if (c) return loadDir(c.dataset.crumb);
   const o = e.target.closest("[data-open]");
@@ -605,11 +823,12 @@ async function openFolder(path, entries) {
     return toast("開けませんでした：" + e.message.slice(0, 160), true);
   }
   document.querySelectorAll(".toast").forEach((t) => t.remove());
+  files.forEach(noteScript);
   const rec = store.get("recent", []).filter((p) => p !== folder);
   rec.unshift(folder); store.set("recent", rec.slice(0, 10));
   const parts = folder.split("/");
   $("#edTitle").textContent = parts[parts.length - 1];
-  $("#edPath").textContent = parts.slice(1, -1).join(" / ");
+  $("#edTitle").title = parts.slice(1).join(" / ");
   $("#browse").hidden = true; $("#edit").hidden = false;
   for (const f of files) {
     const draft = store.get("draft:" + f.path);
@@ -625,16 +844,10 @@ async function openFolder(path, entries) {
   renderTabs(); switchTab(0); setMode("write");
 }
 function renderTabs() {
-  const tools = $(".tab-tools");
-  $("#tabs").querySelectorAll(".tab").forEach((t) => t.remove());
-  files.forEach((f, i) => {
-    const b = document.createElement("button");
-    b.className = "tab" + (i === active ? " active" : "");
-    b.innerHTML = esc(f.name) + (isDirty(f) ? `<span class="mod" aria-label="未保存"></span>` : "");
-    b.onclick = () => switchTab(i);
-    $("#tabs").insertBefore(b, tools);
-  });
+  $("#tabs").innerHTML = files.map((f, i) => `<button role="tab" data-i="${i}" class="${i === active ? "on" : ""}" aria-selected="${i === active}" title="${esc(f.name)}">${esc(f.name.replace(/\.md$/, ""))}${isDirty(f) ? `<span class="mod" aria-label="未保存"></span>` : ""}</button>`).join("");
+  $("#tabs").hidden = files.length < 2;
 }
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) switchTab(+b.dataset.i); });
 function switchTab(i) {
   if (files[active]) { files[active].scroll = ed.scrollTop; files[active].sel = [ed.selectionStart, ed.selectionEnd]; }
   active = i;
@@ -647,13 +860,14 @@ function switchTab(i) {
 }
 function updateCount() { $("#chars").textContent = countChars(ed.value).toLocaleString(); }
 function updateStatus(kind) {
-  const s = $("#status");
-  s.className = "status";
-  if (kind === "saving") { s.classList.add("saving"); s.textContent = "保存中…"; return; }
-  if (kind === "error") { s.classList.add("error"); s.textContent = "保存失敗"; return; }
-  if (anyDirty()) { s.classList.add("dirty"); s.textContent = "未保存"; }
-  else if (lastSavedAt) { s.classList.add("saved"); s.textContent = "保存 " + fmtTime(lastSavedAt); }
-  else s.textContent = "変更なし";
+  const s = $("#status"), meta = $("#edMeta");
+  meta.className = "t2";
+  // 状態は左の点の色でも示す（灰=変更なし／橙=未保存／緑=保存済み／赤=失敗）
+  if (kind === "saving") { meta.classList.add("saving"); s.textContent = "保存中…"; return; }
+  if (kind === "error") { meta.classList.add("error"); s.textContent = "保存失敗"; return; }
+  if (anyDirty()) { meta.classList.add("dirty"); s.textContent = "未保存"; }
+  else if (lastSavedAt) { meta.classList.add("saved"); s.textContent = fmtTime(lastSavedAt) + " 保存"; }
+  else s.textContent = "";
 }
 let draftTimer;
 ed.addEventListener("input", () => {
@@ -685,7 +899,7 @@ $("#backBtn").onclick = async () => {
   folder = null; files = [];
   $("#edit").hidden = true; $("#browse").hidden = false;
   renderRecent();
-  if (!curEntries.length) loadDir(curDir); else renderRows();
+  if (!curEntries.length) loadDir(curDir); else { renderRows(); refreshCounts(); }
 };
 
 /* ============================== 入力補助 ============================== */
@@ -719,6 +933,8 @@ function renderQuick() {
 }
 // 保存ボタンを押した瞬間にキーボードが閉じてボタン位置がずれ、タップが外れるのを防ぐ
 $(".actions").addEventListener("pointerdown", (e) => { if (e.target.closest(".btn")) e.preventDefault(); });
+$("#kbSave").addEventListener("pointerdown", (e) => e.preventDefault());
+$("#kbSave").onclick = () => doCommit(false);
 $("#quick").addEventListener("pointerdown", (e) => { if (e.target.closest(".q") && !e.target.closest('[data-cmd="newname"]')) e.preventDefault(); });
 $("#quick").addEventListener("click", async (e) => {
   const b = e.target.closest(".q"); if (!b) return;
@@ -777,14 +993,17 @@ function insertSpeaker(name) {
 /* ============================== 書く / 読む ============================== */
 function setMode(m) {
   mode = m;
-  $("#modeWrite").classList.toggle("on", m === "write");
-  $("#modeRead").classList.toggle("on", m === "read");
+  const b = $("#modeBtn");
+  b.classList.toggle("mode-on", m === "read");
+  b.setAttribute("aria-pressed", m === "read");
+  b.setAttribute("aria-label", m === "read" ? "書くモードに戻る" : "読むモードにする");
+  b.innerHTML = icon(m === "read" ? "i-pen" : "i-book");
+  $("#edit").classList.toggle("reading", m === "read");
   ed.hidden = m === "read";
   $("#preview").hidden = m === "write";
   if (m === "read") { ed.blur(); renderPreview(); }
 }
-$("#modeWrite").onclick = () => { setMode("write"); ed.focus(); };
-$("#modeRead").onclick = () => setMode("read");
+$("#modeBtn").onclick = () => { if (mode === "read") { setMode("write"); ed.focus(); } else setMode("read"); };
 function renderPreview() {
   const blocks = cur().content.replace(/\r/g, "").split(/\n{2,}/);
   $("#preview").innerHTML = blocks.map((b) => {
@@ -805,7 +1024,8 @@ function renderPreview() {
 /* ============================== 保存 ============================== */
 function setBusy(b, which) {
   busy = b;
-  $("#commitBtn").disabled = b; $("#mergeBtn").disabled = b;
+  $("#commitBtn").disabled = b; $("#mergeBtn").disabled = b; $("#kbSave").disabled = b;
+  if (which === "commit") $("#kbSave").innerHTML = b ? `<span class="spinner"></span>保存中` : `${icon("i-save")}保存`;
   if (which) {
     const isM = which === "merge";
     const btn = isM ? $("#mergeBtn") : $("#commitBtn");
@@ -842,6 +1062,7 @@ async function commitFile(f, auto) {
     try {
       f.sha = await ghWriteFile(f.path, content, message, sha) || f.sha;
       f.saved = content;
+      noteScript(f);
       if (f.content === f.saved) store.del("draft:" + f.path);
       dirCache.delete(f.path.split("/").slice(0, -1).join("/"));
       return true;
@@ -851,7 +1072,7 @@ async function commitFile(f, auto) {
       let theirs;
       try { theirs = await ghReadFile(f.path); } catch { throw e; }
       if (theirs.sha === sha) throw e;
-      if (theirs.text === content) { f.sha = theirs.sha; f.saved = content; return true; }
+      if (theirs.text === content) { f.sha = theirs.sha; f.saved = content; noteScript(f); return true; }
       if (auto) { toast(`${f.name} が GitHub 上で更新されていたため自動保存を止めました`, true); return false; }
       setBusy(false, "commit");
       const v = await conflictDialog(f, theirs);
@@ -905,7 +1126,7 @@ async function doMerge() {
     if (r === "noop") { updateStatus(); toast(`${settings.base} にはすでに反映済みです`); return; }
     // main 側の変更（Claude の校正など）を執筆用ブランチにも取り込んでおく
     try { await ghMerge(settings.branch, settings.base, `${settings.base} の最新を ${settings.branch} に取り込み`); } catch {}
-    dirCache.clear();
+    dirCache.clear(); tree = null;
     updateStatus();
     await sheet(`
       <div class="dlg-ico ok">${icon("i-check")}</div>
@@ -972,12 +1193,12 @@ function openSettings() {
   }).then((v) => {
     if (v === "logout") {
       store.del("token"); token = "";
-      folder = null; files = []; dirCache.clear();
+      folder = null; files = []; dirCache.clear(); tree = null;
       $("#edit").hidden = true; $("#browse").hidden = false;
       return connectHelp("");
     }
     const after = settings.branch + "|" + settings.owner + "|" + settings.repo;
-    if (after !== before && folder === null) { dirCache.clear(); loadDir(ROOT); }
+    if (after !== before) { dirCache.clear(); tree = null; countsFailed = false; if (folder === null) loadDir(ROOT); }
   });
 }
 $("#browseSettings").onclick = openSettings;
@@ -994,6 +1215,7 @@ async function boot() {
   loadDir(curDir);
 }
 applySettings();
+setView(view);
 renderRecent();
 boot();
 </script>
